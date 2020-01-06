@@ -2,12 +2,15 @@ import sys
 import csv
 from utils import *
 import classifiers
+from matplotlib import pyplot as plt
+import numpy as np
 
-INPUT_PATH = "./data/"
+INPUT_PATH = "../Results/Classifier Benchmarking/"
 OUTPUT_PATH = "Graphs/"
 WINDOW = 0.1
-START_TIME = 5
-END_TIME = 8
+RTT = 0.125
+START_TIME = 6
+END_TIME = 10
 MOVING_AVERAGE_BOX = 40
 
 # Change/Add the destination IPs to newer IPs as required. This IP is of the machine where receiver runs
@@ -54,35 +57,54 @@ def loadData(input_name):
       break
   return (np.asarray(throughput_time[start_idx:end_idx]), np.asarray(throughput[start_idx:end_idx]))
 
-# Param $1 -> Filename of input data
-def processSingle():
-  file_name = sys.argv[1]
+def plotSingle(file_name):
   time, throughput = loadData(file_name)
-  classifiers.isBBR
-  classifiers.isCopa(throughput, time)
+  plt.plot(time, throughput)
+  plt.show()
+
+def processSingle(file_name):
+  time, throughput = loadData(file_name)
+  found = -2
+  if classifiers.isVivace(time, throughput, RTT):
+    found = classifiers.CC_Algo.PCC_Vivace if found == -2 else classifiers.CC_Algo.Unknown
+  if classifiers.isBBR(time, throughput, RTT):
+    found = classifiers.CC_Algo.BBR if found == -2 else classifiers.CC_Algo.Unknown
+  if classifiers.isCopa(time, throughput, RTT):
+    found = classifiers.CC_Algo.Copa if found == -2 else classifiers.CC_Algo.Unknown
+  if found == -2:
+    found = classifiers.CC_Algo.Unknown
+  return found
 
 # Param $1 -> Number of files going to be processed. Note that the files should be named in sender${index}.csv
-def processMultiple():
+def processMultiple(data):
   file_count = sys.argv[1]
   bbr_count = 0
-  unknown = set()
+  vivace_count = 0
+  copa_count = 0
+  unknown_count = set()
+
   for i in range(1, int(file_count)+1):
-    time, throughput = loadData("sender"+str(i)+".csv")
-    if classifiers.isBBR(throughput, time):
+    result = processSingle(data+"sender"+str(i)+".csv")
+    if (result == classifiers.CC_Algo.BBR):
       bbr_count+=1
-    else:
-      unknown.add(i)
-  print(bbr_count)
-  print(unknown)
+    if (result == classifiers.CC_Algo.PCC_Vivace):
+      vivace_count+=1
+    if (result == classifiers.CC_Algo.Copa):
+      copa_count+=1
+    if (result == classifiers.CC_Algo.Unknown):
+      unknown_count.add(i)
+  
+  return np.array([bbr_count, vivace_count, copa_count, unknown_count])
 
 def main():
-  processMultiple()
-  # curves = [smooth(data_sender[1],MOVING_AVERAGE_BOX)]
-  # #curves = [data_sender[1]]
-  # derivative = [getDerivative(data_sender[0], smooth(data_sender[1], MOVING_AVERAGE_BOX))]
-  # #derivative = [getDerivative(data_sender[0], data_sender[1])]
-  # plotGraph(data_sender[0], curves, "test", "test")
-  # plotGraph(data_sender[0], derivative, "d", "d")
+
+  #plotSingle("vivace_data/sender1.csv")
+  counts = processMultiple("vivace_data/")
+
+  print("BBR count: " + str(counts[0]))
+  print("Vivace count: " + str(counts[1]))
+  print("Copa count: " + str(counts[2]))
+  print("Unknowns: " + str(counts[3]))
 
 if __name__ == "__main__":
     main()
