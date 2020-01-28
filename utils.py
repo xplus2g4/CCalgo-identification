@@ -7,11 +7,10 @@ def smooth(y, box_pts):
   y_smooth = np.convolve(y, box, mode='same')
   return y_smooth
 
-def getDerivative(time, throughput, order=1):
+def getDerivative(time, throughput):
   np_time = np.array(time, dtype=float)
   derivative = np.array(throughput, dtype=float)
-  for i in range(order):
-    derivative = np.gradient(derivative, np_time)
+  derivative = np.gradient(derivative, np_time)
   return derivative
 
 def plotGraph(time, curves, label, output_name,

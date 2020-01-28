@@ -9,10 +9,8 @@ yellow='\033[0;33m'
 plain='\033[0m'
 
 pcap_to_csv(){
-  echo -e "[${green}Converting data to .csv format${plain}]"
-  tshark -r data/sender$1.pcap -T fields -e frame.time_relative -e frame.len -e ip.dst -E header=y -E separator=, -E quote=d -E occurrence=f > data/sender$1.csv
-  tshark -r data/recv$1.pcap -T fields -e frame.time_relative -e frame.len -e ip.dst -E header=y -E separator=, -E quote=d -E occurrence=f > data/recv$1.csv
-  rm -f data/sender$1.pcap
+  echo -e "[${green}Converting recv data to .csv format${plain}]"
+  tshark -r data/recv$1.pcap -T fields -e frame.number -e frame.time_relative -e frame.len -e ip.dst -E header=y -E separator=, -E quote=d -E occurrence=f > data/recv$1.csv
   rm -f data/recv$1.pcap
 }
 
@@ -88,7 +86,6 @@ if   [ "${selection}" == "3" ]; then
     echo -e "[${green}Run number ${yellow}$i${plain}]"
     "./localize_bottleneck.sh" start ${algorithms[${selection}-1]} $i
     wait
-    sleep 3
     pcap_to_csv $i
     sleep 3
   done
